@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Controle do Braço Robótico</title>
+  <style>
+    body { font-family: sans-serif; margin: 30px; }
+    .control-group { margin-bottom: 20px; }
+    label { display: inline-block; width: 100px; }
+    input[type="range"] { width: 250px; vertical-align: middle; }
+  </style>
+</head>
+<body>
+
+  <h2>Controle do Braço Robótico</h2>
+  <button id="btnConnect">Conectar ao Arduino</button>
+  <span id="status">Desconectado</span>
+  <hr>
+
+  <div class="control-group">
+    <label>Base (0):</label>
+    <input type="range" id="servo0" min="0" max="180" value="90">
+    <span id="val0">90</span>°
+  </div>
+
+  <div class="control-group">
+    <label>Ombro (1):</label>
+    <input type="range" id="servo1" min="0" max="180" value="90">
+    <span id="val1">90</span>°
+  </div>
+
+  <div class="control-group">
+    <label>Cotovelo (2):</label>
+    <input type="range" id="servo2" min="0" max="180" value="90">
+    <span id="val2">90</span>°
+  </div>
+
+  <div class="control-group">
+    <label>Garra (3):</label>
+    <input type="range" id="servo3" min="0" max="180" value="90">
+    <span id="val3">90</span>°
+  </div>
+
+  <script>
+    let port;
+    let writer;
+
+    document.getElementById('btnConnect').addEventListener('click', async () => {
+      try {
+        port = await navigator.serial.requestPort();
+        await port.open({ baudRate: 115200 });
+        const textEncoder = new TextEncoderStream();
+        textEncoder.readable.pipeTo(port.writable);
+        writer = textEncoder.writable.getWriter();
+        
+        const statusDiv = document.getElementById('status');
+        statusDiv.textContent = 'Conectado ao Arduino';
+        statusDiv.classList.add('online');
+      } catch (err) {
+        alert('Erro ao conectar com o Arduino: ' + err);
+      }
+    });
+
+    async function sendServoAngle(id, angle) {
+      if (!writer) return;
+      document.getElementById(`val${id}`).textContent = angle;
+      // Envia no formato "ID:ÂNGULO\n" exigido pelo Arduino
+      await writer.write(`${id}:${angle}\n`);
+    }
+
+    // Associa o evento a cada um dos 4 sliders (0, 1, 2 e 3)
+    [0, 1, 2, 3].forEach(id => {
+      const slider = document.getElementById(`servo${id}`);
+      if (slider) {
+        slider.addEventListener('input', (e) => {
+          sendServoAngle(id, e.target.value);
+        });
+      }
+    });
+  </script>
+</body>
+</html>
