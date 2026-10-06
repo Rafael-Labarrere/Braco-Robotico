@@ -2,43 +2,68 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <title>Controle do Braço Robótico</title>
+  <title>Controle de Precisão - Braço Robótico</title>
   <style>
-    body { font-family: sans-serif; margin: 30px; }
-    .control-group { margin-bottom: 20px; }
-    label { display: inline-block; width: 100px; }
-    input[type="range"] { width: 250px; vertical-align: middle; }
+    body { font-family: Arial, sans-serif; max-width: 550px; margin: 30px auto; padding: 20px; background: #eef2f5; }
+    h1 { text-align: center; color: #1e293b; font-size: 24px; margin-bottom: 5px; }
+    p.subtitle { text-align: center; color: #64748b; font-size: 14px; margin-top: 0; }
+    
+    .status { text-align: center; padding: 8px; border-radius: 6px; font-weight: bold; background: #fee2e2; color: #991b1b; margin-bottom: 15px; }
+    .status.online { background: #dcfce7; color: #166534; }
+    
+    .card { background: #ffffff; padding: 18px; border-radius: 10px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); margin-bottom: 15px; }
+    label { font-weight: bold; display: flex; justify-content: space-between; color: #334155; margin-bottom: 8px; }
+    input[type=range] { width: 100%; cursor: pointer; height: 6px; }
+    
+    .btn { width: 100%; padding: 12px; font-size: 15px; font-weight: bold; border: none; border-radius: 8px; cursor: pointer; transition: 0.2s; }
+    .btn-main { background: #2563eb; color: white; }
+    .btn-main:hover { background: #1d4ed8; }
+    .btn-home { background: #f59e0b; color: white; margin-top: 10px; }
+    .btn-home:hover { background: #d97706; }
+    
+    .btn-group { display: flex; gap: 10px; margin-top: 8px; }
+    .btn-garra { flex: 1; padding: 10px; font-weight: bold; border: none; border-radius: 6px; cursor: pointer; color: white; }
+    .btn-open { background: #10b981; }
+    .btn-close { background: #ef4444; }
   </style>
 </head>
 <body>
 
-  <h2>Controle do Braço Robótico</h2>
-  <button id="btnConnect">Conectar ao Arduino</button>
-  <span id="status">Desconectado</span>
-  <hr>
+  <h1>Braço Robótico</h1>
+  <p class="subtitle">Controle de Movimento Suave</p>
+  
+  <div id="status" class="status">Desconectado do Arduino</div>
+  
+  <button id="btnConnect" class="btn btn-main">🔌 Conectar ao Arduino</button>
+  <button id="btnHome" class="btn btn-home">🏠 Posição Inicial de Segurança (Home)</button>
 
-  <div class="control-group">
-    <label>Base (0):</label>
+  <div style="margin-top: 20px;"></div>
+
+  <!-- BASE -->
+  <div class="card">
+    <label>Base (Pino D3): <span><b id="val0">90</b>°</span></label>
     <input type="range" id="servo0" min="0" max="180" value="90">
-    <span id="val0">90</span>°
   </div>
 
-  <div class="control-group">
-    <label>Ombro (1):</label>
-    <input type="range" id="servo1" min="0" max="180" value="90">
-    <span id="val1">90</span>°
+  <!-- OMBRO -->
+  <div class="card">
+    <label>Ombro / Esquerdo (Pino D5): <span><b id="val1">90</b>°</span></label>
+    <input type="range" id="servo1" min="30" max="150" value="90">
   </div>
 
-  <div class="control-group">
-    <label>Cotovelo (2):</label>
-    <input type="range" id="servo2" min="0" max="180" value="90">
-    <span id="val2">90</span>°
+  <!-- COTOVELO -->
+  <div class="card">
+    <label>Cotovelo / Direito (Pino D6): <span><b id="val2">90</b>°</span></label>
+    <input type="range" id="servo2" min="30" max="150" value="90">
   </div>
 
-  <div class="control-group">
-    <label>Garra (3):</label>
-    <input type="range" id="servo3" min="0" max="60" value="0">
-    <span id="val3">90</span>°
+  <!-- GARRA -->
+  <div class="card">
+    <label>Garra (Pino D9): <span><b id="val3">10</b>° (Aberta)</span></label>
+    <div class="btn-group">
+      <button id="btnAbrirGarra" class="btn-garra btn-open">🔓 Abrir (10°)</button>
+      <button id="btnFecharGarra" class="btn-garra btn-close">🔒 Fechar (50°)</button>
+    </div>
   </div>
 
   <script>
@@ -54,28 +79,41 @@
         writer = textEncoder.writable.getWriter();
         
         const statusDiv = document.getElementById('status');
-        statusDiv.textContent = 'Conectado ao Arduino';
+        statusDiv.textContent = 'Conectado e Pronto!';
         statusDiv.classList.add('online');
       } catch (err) {
-        alert('Erro ao conectar com o Arduino: ' + err);
+        alert('Erro ao conectar: ' + err);
       }
     });
 
-    async function sendServoAngle(id, angle) {
+    async function sendAngle(id, angle) {
       if (!writer) return;
       document.getElementById(`val${id}`).textContent = angle;
-      // Envia no formato "ID:ÂNGULO\n" exigido pelo Arduino
       await writer.write(`${id}:${angle}\n`);
     }
 
-    // Associa o evento a cada um dos 4 sliders (0, 1, 2 e 3)
-    [0, 1, 2, 3].forEach(id => {
+    // Eventos dos Sliders (Mapeia Base, Ombro e Cotovelo)
+    [0, 1, 2].forEach(id => {
       const slider = document.getElementById(`servo${id}`);
-      if (slider) {
-        slider.addEventListener('input', (e) => {
-          sendServoAngle(id, e.target.value);
-        });
-      }
+      slider.addEventListener('input', (e) => { // 'change' envia o comando ao soltar ou mover com firmeza
+        sendAngle(id, e.target.value);
+      });
+    });
+
+    // Botões da Garra
+    document.getElementById('btnAbrirGarra').addEventListener('click', () => sendAngle(3, 10));
+    document.getElementById('btnFecharGarra').addEventListener('click', () => sendAngle(3, 50));
+
+    // Botão Home
+    document.getElementById('btnHome').addEventListener('click', async () => {
+      document.getElementById('servo0').value = 90;
+      document.getElementById('servo1').value = 90;
+      document.getElementById('servo2').value = 90;
+      
+      await sendAngle(0, 90);
+      await sendAngle(1, 90);
+      await sendAngle(2, 90);
+      await sendAngle(3, 10);
     });
   </script>
 </body>
