@@ -62,7 +62,7 @@
     <label>Garra (Pino D9): <span><b id="val3">10</b>° (Aberta)</span></label>
     <div class="btn-group">
       <button id="btnAbrirGarra" class="btn-garra btn-open">🔓 Abrir (10°)</button>
-      <button id="btnFecharGarra" class="btn-garra btn-close">🔒 Fechar (50°)</button>
+      <button id="btnFecharGarra" class="btn-garra btn-close">🔒 Fechar (120°)</button>
     </div>
   </div>
 
@@ -102,7 +102,7 @@
 
     // Botões da Garra
     document.getElementById('btnAbrirGarra').addEventListener('click', () => sendAngle(3, 10));
-    document.getElementById('btnFecharGarra').addEventListener('click', () => sendAngle(3, 50));
+    document.getElementById('btnFecharGarra').addEventListener('click', () => sendAngle(3, 120));
 
     // Botão Home
     document.getElementById('btnHome').addEventListener('click', async () => {
